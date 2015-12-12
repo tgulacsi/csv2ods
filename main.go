@@ -27,6 +27,9 @@ import (
 	"strings"
 
 	"github.com/tgulacsi/csv2ods/ods"
+	"golang.org/x/text/encoding"
+	"golang.org/x/text/encoding/htmlindex"
+	"golang.org/x/text/transform"
 )
 
 func main() {
@@ -38,16 +41,30 @@ func main() {
 		ShowHelp    bool
 		err         error
 	)
+	charset := os.Getenv("LANG")
+	if i := strings.IndexByte(charset, '.'); i < 0 {
+		charset = ""
+	} else {
+		charset = charset[i+1:]
+	}
 
 	flag.StringVar(&OutFileName, "o", "", "output file name or stdout if empty")
 	flag.BoolVar(&noHeading, "noheading", false, "first row is heading, by default")
 	flag.StringVar(&titles, "titles", "", "sheet titles, comma separated - the default is the names of input files")
+	flag.StringVar(&charset, "charset", charset, "input CSV's charset")
 	flag.BoolVar(&ShowHelp, "h", false, "show help")
 	flag.Parse()
 
 	if ShowHelp {
 		flag.Usage()
 		os.Exit(0)
+	}
+
+	var enc encoding.Encoding
+	if charset != "" {
+		if enc, err = htmlindex.Get(charset); err != nil {
+			log.Fatalf("cannot find encoding for charset %q: %v", charset, err)
+		}
 	}
 
 	if strings.TrimSpace(titles) != "" {
@@ -89,10 +106,14 @@ func main() {
 	out := ods.NewWriter(outStream)
 
 	for n, in := range inStreams {
+		if enc != nil {
+			in = transform.NewReader(in, enc.NewDecoder())
+		}
 		bin := bufio.NewReaderSize(in, 16<<20)
 		line, _ := bin.Peek(1024)
 		inCSV := csv.NewReader(bin)
 		inCSV.LazyQuotes = true
+		inCSV.FieldsPerRecord = -1
 		if bytes.Contains(line, []byte(`";"`)) {
 			inCSV.Comma = ';'
 		} else if bytes.Contains(line, []byte("\"\t\"")) {
