@@ -32,6 +32,8 @@ import (
 	"golang.org/x/text/transform"
 )
 
+//go:generate go generate ./ods
+
 func main() {
 	var (
 		OutFileName string
