@@ -84,7 +84,15 @@ func (w *Writer) BeginSheet(name string, header []string) error {
 	if err := xml.EscapeText(w.w, []byte(name)); err != nil {
 		return errors.Wrapf(err, "escape sheet name %q", name)
 	}
-	_, _ = io.WriteString(w.w, `" table:style-name="ta1"><table:table-column table:style-name="co1" table:default-cell-style-name="Default"/>`+"\n")
+	_, _ = io.WriteString(w.w, `" table:style-name="ta1"><table:table-column table:style-name="co1" table:default-cell-style-name="Default"/><table:table-row>`+"\n")
+	for _, head := range header {
+		io.WriteString(w.w, `<table:table-cell office:value-type="string" calcext:value-type="string"><text:p>`)
+		if err := xml.EscapeText(w.w, []byte(head)); err != nil {
+			return errors.Wrapf(err, "escape header name %q", head)
+		}
+		io.WriteString(w.w, `</text:p></table:table-cell>`)
+	}
+	_, _ = io.WriteString(w.w, "</table:table-row>\n")
 	return w.w.Err()
 }
 
