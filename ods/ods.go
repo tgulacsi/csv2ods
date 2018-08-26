@@ -25,13 +25,13 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/rakyll/statik/fs"
 	_ "github.com/tgulacsi/csv2ods/ods/statik"
-	"github.com/tgulacsi/statik/fs"
 )
 
 // After modifying anything under ./assets/, run "go generate"!
 //
-//go:generate go get github.com/tgulacsi/statik
+//go:generate go get github.com/rakyll/statik
 //go:generate statik -f -src=assets
 
 var BufferSize = 1 << 20 // 1MiB
